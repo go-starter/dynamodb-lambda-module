@@ -66,5 +66,18 @@ Resources:
       FunctionName: !GetAtt EventsToDDBLambda.Arn
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com    
-      
   
+  
+  # Rule to route incoming events to EventsDDBLambda    
+  EventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventBusName: !GetAtt EventBridgeResource.Name
+      Description: "Route Events of type storeToDDB to eventsToDDBLambda"
+      EventPattern:
+        detail-type:
+          - "StoreToDDB"
+      State: ENABLED
+      Targets:
+        - Id: EventHandlingLambda
+          Arn: !GetAtt EventsToDDBLambda.Arn
