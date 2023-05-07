@@ -25,3 +25,46 @@ Resources:
         - AttributeName: "eventId"
           KeyType: "HASH"    
 
+  EventsToDDBLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: "Updates EventBridge events to DynamoDB table"
+      CodeUri: ../lambdas/update-events
+      Handler: update-events
+      Runtime: go1.x
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Tracing: Active
+      Environment:
+        Variables:
+          EVENTS_DDB_TABLE: !Ref EventsDDBTable
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSLambdaExecute
+      Policies:
+        - PolicyName: WriteAccessToDDB
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt EventsDDBTable.Arn
+
+  PermissionEvbToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt EventsToDDBLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com    
+      
+  
